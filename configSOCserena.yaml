@@ -1,0 +1,109 @@
+# Input/Output files definition
+outputDir: "/home/nsaby/ejp/outputsocloss/"
+profilesStandardFile: "/home/nsaby/ejp/points/rmqs_socfracSERENA_profiles.csv"
+layersStandardFile: "/home/nsaby/ejp/points/rmqs_socfracSERENA_0_30cm_layers.csv"
+covarsDir: "/home/nsaby/covariates/socloss/covdsm/"
+maskFile: "/home/nsaby/covariates/socloss/covdsm/slope.tif"
+
+# The variable of interest
+voi: "soc" 
+
+voi_parameters:
+  voi_min_value: 0
+  voi_max_value: Inf
+  transformation:  "notransform"
+
+# Dataset variables
+pid_name: "pid"
+lyrid_name: "lyrid"
+easting_name: "x_reel"
+northing_name: "y_reel"
+top_layer_name: "top"
+bottom_layer_name: "bottom"
+depth_column_name: "depth"
+fold_name: "fold"
+stratum_name: "stratum"
+
+# Model parameters
+depth_name: "0-20"
+depths_3D:
+  - "0,5,15,30,60,100,200"
+use_rfe: "dorfe"
+do_tune: "tune" # "notune"
+model_name: "rangerquantreg"
+n_folds: 10
+tune_metric: "mec" # "rmse" "rsq"
+
+# Covariates information. Coordinate reference system definition
+crs_profiles: "EPSG:2154"
+crs_out: null
+NA_mask_flag: null
+covariate_pattern: ".tif$"
+
+# Output options
+multiply: 10
+datatype_geotiff: "INT2U" #  For the output maps: values accepted are "INT1U", "INT2U", "INT2S", "INT4U", "INT4S", "FLT4S", "FLT8S". With GDAL >= 3.5 you can also use "INT8U" and "INT8S". And with GDAL >= 3.7 you can use also use "INT1S". See gdal to discover the GDAL version you are using. The first three letters indicate whether the datatype is an integer (whole numbers) of a real number ("float", decimal numbers), the fourth character indicates the number of bytes used for each number. Higher values allow for storing larger numbers and/or more precision; but create larger files. The "S" or "U" indicate whether the values are signed (both negative and positive) or unsigned (zero and positive values only).
+gdal_options:
+  - "COMPRESS=DEFLATE"
+  - "PREDICTOR=2" # modify or remove if FLT4S is used. See https://gdal.org/drivers/raster/gtiff.html
+gdal_output_driver: "COG" # "GTiff" # "COG" is availbale with gdal >= 3.1
+overwrite: true
+
+# Tiling and cores to parallelise
+tileside: 200
+cores: 16
+
+# Advanced options. Only modify if you know what you are doing
+
+# Other advanced options
+covariatesListFile: null # "config/covs_list_corr_0.85_all" # Either a file path or NULL. A file with the names of the covariates to use (file name without extention, one per line)
+thick_cond: 0
+use_dggridR: true
+dggrid_resolution: 6
+#' Seed for random processes
+rndseed: 982374923
+multiband: false
+rfe_number: 10
+
+# Plotting options
+plot_border: false
+legend_title: ""
+add_north: true
+add_sbar: true
+save_to_disk: true
+
+model_options:
+  rangerquantreg:
+    parsnip_engine: "ranger"
+    parsnip_importance: "impurity"
+    parsnip_quantreg: true
+    parsnip_mode: "regression"
+    parsnip_mtry_range_min_multiplier: 0.5
+    parsnip_mtry_range_max_multiplier: 3
+    parsnip_trees_range: [500, 1000]
+    ntree_default: 500
+    stats: ["mean", "Q0.5", "Q0.05", "Q0.95"]
+    stats_to_log_backtansform: ["mean"]
+    stats_to_exp: ["Q0.5", "Q0.05", "Q0.95"]
+    search_type: "regular" # "random" #
+    size_random_search: 50
+    levels_regular_search: 7
+
+# Automatically generated file paths
+profilesOverlayFile: "{outputDir}/points/profiles_overlay.csv"
+profilesFoldsFile: "{outputDir}/points/profiles_folds.csv"
+layersDepthProcessedFile: "{outputDir}/points/layers_depth_processed_{depth_name}.csv"
+regressionMatrixFile: "{outputDir}/model/{voi}/regression_matrix_{depth_name}.csv"
+rfeCovariatesFile: "{outputDir}/model/{voi}/rfe_{depth_name}_{transformation}.csv"
+rfeMetricsProfileFile: "{outputDir}/model/{voi}/rfe_profile_{depth_name}_{transformation}.RDS"
+tuningGridFile: "{outputDir}/model/{voi}/tunegrid_{model_name}_{depth_name}_{transformation}_{use_rfe}.RDS"
+bestParamFile: "{outputDir}/model/{voi}/bestparam_{model_name}_{depth_name}_{transformation}_{use_rfe}.csv"
+cvPredictObserveFile: "{outputDir}/model/{voi}/cv-predict-observe_{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}.csv"
+cvMetricsFile: "{outputDir}/model/{voi}/cv-metrics_{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}.csv"
+internalMetricsFile: "{outputDir}/model/{voi}/internal-metrics_{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}.csv"
+modelFittedFile: "{outputDir}/model/{voi}/model-fitted_{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}.RDS"
+tilesFile: "{outputDir}/other/tiles.csv"
+tilesFileGpkg: "{outputDir}/other/tiles.gpkg"
+tilesDir : "{outputDir}/maps/{voi}/{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}"
+predictedMapVrt : "{outputDir}/maps/{voi}/{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}/{voi}.vrt"
+plotDir : "{outputDir}/plots/{voi}/{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}"
