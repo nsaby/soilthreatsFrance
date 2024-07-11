@@ -50,7 +50,7 @@ gdal_output_driver: "COG" # "GTiff" # "COG" is availbale with gdal >= 3.1
 overwrite: true
 
 # Tiling and cores to parallelise
-tileside: 200
+tileside: 600
 cores: 16
 
 # Advanced options. Only modify if you know what you are doing
