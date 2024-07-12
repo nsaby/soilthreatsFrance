@@ -133,14 +133,14 @@ saveRDS(RMQS_stock_carbone, file= "RMQS_stock_12.RDS")
 nc <- readRDS("data/rmqs.RDS") %>%
   st_transform(crs = 2154)
 
-analyses_rmqs = read.csv2(file = "data/analyses_rmqs_As.csv", header = TRUE) #données RMQS avec tous les facteurs sélectionnés
+analyses_rmqs = read.csv2(file = "~/ejp/data/analyses_rmqs_As.csv", header = TRUE) #données RMQS avec tous les facteurs sélectionnés
 
-da <- readRDS(file = "data/RMQS_da_12.RDS") %>%
+da <- readRDS(file = "~/ejp/data/RMQS_da_12.RDS") %>%
   group_by(id_site,no_horizon) %>%
   summarise(da_pond = mean(da_pond)  ) %>%
   filter(no_horizon == 1)
 
-stockC  <- readRDS(file = "data/RMQS_stock_12.RDS") 
+stockC  <- readRDS(file = "~/ejp/data/RMQS_stock_12.RDS") 
 
 nc <- analyses_rmqs %>% 
   left_join(stockC %>% 
@@ -170,13 +170,15 @@ layers <- nc %>%
          socgreater45yrsoc = 0.75 * soc,
          SOC_stock_0_50cm_RMQS1 = SOC_stock_0_30cm_RMQS1 +  SOC_stock_30_50cm_RMQS1 ,
          SOC_stock_0_50cm_RMQS1_less45yrsoc = 0.35 * SOC_stock_0_30cm_RMQS1 + 0.18 * SOC_stock_30_50cm_RMQS1 ,
-         SOC_stock_0_50cm_RMQS1_greater45yrsoc = 0.65 * SOC_stock_0_30cm_RMQS1 + 0.82 * SOC_stock_30_50cm_RMQS1
-         )
+         SOC_stock_0_50cm_RMQS1_greater45yrsoc = 0.65 * SOC_stock_0_30cm_RMQS1 + 0.82 * SOC_stock_30_50cm_RMQS1 ,
+         SOC_stock_0_30cm_RMQS1_less45yrsoc = 0.35 * SOC_stock_0_30cm_RMQS1  ,
+         SOC_stock_0_30cm_RMQS1_greater45yrsoc = 0.65 * SOC_stock_0_30cm_RMQS1 
+  )
 
 #add new columns. Note that we have single depth,"pid" and "lyrid" are the same columns
 layers$lyrid <- 1 # layers$pid
 layers$top <- 0
-layers$bottom <- 50
+layers$bottom <- 30
 
 #
 head(layers)
@@ -189,8 +191,8 @@ profiles <- profiles[,!names(profiles) %in% c("lyrid", "top", "bottom")]
 head(profiles)
 
 
-write.csv(layers, "points/rmqs_socfracSERENA_0_30cm_layers.csv",row.names = F)
-write.csv(profiles, "points/rmqs_socfracSERENA_profiles.csv", row.names = F)
+write.csv(layers, "data/rmqs_socfracSERENA_0_30cm_layers.csv",row.names = F)
+write.csv(profiles, "data/rmqs_socfracSERENA_profiles.csv", row.names = F)
 
 
 
