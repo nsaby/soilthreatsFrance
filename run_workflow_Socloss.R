@@ -67,7 +67,7 @@ file.copy("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/s
           overwrite = T)
 
 
-## 2 stable SOC actual  ----------
+## 2 Stable SOC actual  ----------
 
 # create a folder in the output folder of the project
 mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socgreater45yrsoc"
@@ -83,7 +83,7 @@ prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
 
 
-## 3 SOC actual dyn-------
+## 3 SOC dynamic actual -------
 
 # (no need to map in fact)
 
@@ -98,9 +98,9 @@ need2fit = TRUE
 prediction = FALSE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
 
-## 4  SOC futur dyn -----------
+## 4  SOC  dynamic prediction -----------
 
-# change to dyn covariate-ssp1
+####4.1 Predict SOC dynamic ssp1---------------
 
 mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1"
 if ( !  file.exists(mainDir))  dir.create(mainDir) 
@@ -142,7 +142,7 @@ prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
 
 
-# predict socless45yr in ssp5
+####4.2 Predict SOC dynamic ssp5----------------
 
 mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5"
 if ( !  file.exists(mainDir))  dir.create(mainDir) 
@@ -170,7 +170,7 @@ source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R
 ##  5 Actual stable carbon and future projection ----------
 stable = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socgreater45yrsoc/maps/socgreater45yrsoc/rangerquantreg_0-30_notransform_dorfe_notune/socgreater45yrsoc_Q0.5_0-30cm.tif")/10
 
-####5.1 sum actual stable carbon and future projection ssp1------------------
+####5.1 sum actual stable carbon and dynamic future projection ssp1------------------
 
 futurdyn_ssp1 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1/maps/socless45yrsoc/rangerquantreg_0-30_notransform_dorfe_notune/socless45yrsoc_Q0.5_0-30cm.tif")/10
 
@@ -181,7 +181,7 @@ plot(soc2050_ssp1)
 writeRaster(soc2050_ssp1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/soildsm/soc2050_ssp1.tif",
             overwrite = T)
 
-####5.2 sum actual stable carbon and future projection ssp5------------------
+####5.2 sum actual stable carbon and dynamic future projection ssp5------------------
 
 futurdyn_ssp5 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5/maps/socless45yrsoc/rangerquantreg_0-30_notransform_dorfe_notune/socless45yrsoc_Q0.5_0-30cm.tif")/10
 
@@ -409,11 +409,160 @@ if ( !  file.exists(mainDir))  dir.create(mainDir)
 
 config$covarsDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/"
 config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_actual"
-config$voi = "SOC_stock_0_30cm_RMQS1"
+config$voi = "SOC_stock_0_30cm"
 
 need2fit = TRUE
 prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
 
 
+## 2 Stable SOC stock actual --------------
+
+# create a folder in the output folder of the project
+mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_greater45yr"
+if ( !  file.exists(mainDir))  dir.create(mainDir) 
+
+config$covarsDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/"
+config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_greater45yr"
+config$voi = "SOC_stock_0_30cm_greater45yr"
+
+need2fit = TRUE
+prediction = TRUE
+
+source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
+
+
+## 3 SOC stock dynamic actual -------
+
+# (no need to map in fact)
+
+mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yr"
+if ( !  file.exists(mainDir))  dir.create(mainDir) 
+
+config$covarsDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/"
+config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yr"
+config$voi = "SOC_stock_0_30cm_less45yr"
+
+need2fit = TRUE
+prediction = FALSE
+source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
+
+## 4  SOC  dynamic future -----------
+
+####4.1 Predict SOC stock dynamic ssp1  -----------
+
+mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp1"
+if ( !  file.exists(mainDir))  dir.create(mainDir) 
+
+# copy first the output from SOC stock dynamic actual into  socless45yrssp1
+from.dir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yr/model/"
+outDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp1/"
+system(paste0("cp -R ",from.dir," ", outDir))
+
+#Clean the covdsm folder and insert the future and stable covariates
+f <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", 
+                include.dirs = F, 
+                full.names = T, recursive = T)
+file.remove(f)
+
+#add climate, bio and LU future, soil depth in covdsm folder
+list_of_files <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/stable/",
+                            full.names = TRUE)
+
+lapply(list_of_files, function(i) {
+  file.copy(from = i, to = paste0("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", basename(i)),
+            overwrite = TRUE)})
+
+list_of_files <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/dynfutur/ssp1/",
+                            full.names = TRUE)
+lapply(list_of_files, function(i) {
+  file.copy(from = i, to = paste0("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", basename(i)) ,
+            overwrite = TRUE)
+  
+})
+
+# add soil depth France
+file.copy("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/soildsm/Soil_depth_France.tif", "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/Soil_depth.tif")
+
+
+config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp1/"
+config$voi = "SOC_stock_0_30cm_less45yr"
+
+need2fit = FALSE
+prediction = TRUE
+source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
+
+
+####4.2 Predict SOC stock dynamic ssp5-----------
+
+mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp5"
+if ( !  file.exists(mainDir))  dir.create(mainDir) 
+
+# copy first the output from SOC stock dynamic actual into  socless45yrssp1
+from.dir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yr/model/"
+outDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp5/"
+system(paste0("cp -R ",from.dir," ", outDir))
+
+list_of_files <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/dynfutur/ssp5/",
+                            full.names = TRUE)
+lapply(list_of_files, function(i) {
+  file.copy(from = i, to = paste0("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", basename(i)) ,
+            overwrite = TRUE
+  )
+})
+
+config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp5/"
+config$voi = "SOC_stock_0_30cm_less45yr"
+
+need2fit = FALSE
+prediction = TRUE
+source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
+
+##5 actual stable SOC stock and future projection ----------------
+
+SOC_stock_stable <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_greater45yr/maps/SOC_stock_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_greater45yr_Q0.5_0-30cm.tif")/10
+
+####5.1 sum actual stable SOC stock and dynamic future projection ssp1------------------
+
+SOC_stock_dyn_ssp1 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp1/maps/SOC_stock_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_greater45yr_Q0.5_0-30cm.tif")/10
+
+soc_stock1 = SOC_stock_stable + SOC_stock_dyn_ssp1
+
+plot(soc_stock1)
+
+writeRaster(soc_stock1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_stock/soc_stock1.tif",
+            overwrite = T)
+
+####5.2 sum actual stable carbon and dynamic future projection ssp5------------------
+
+SOC_stock_dyn_ssp5 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp5/maps/SOC_stock_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_greater45yr_Q0.5_0-30cm.tif")/10
+
+soc_stock2 = SOC_stock_stable + SOC_stock_dyn_ssp5
+
+plot(soc_stock2)
+
+writeRaster(soc2050_ssp5,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_stock/soc_stock2.tif",
+            overwrite = T)
+
+##6 SOC stock loss----------------
+
+SOC_stock_actual <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_actual/maps/SOC_stock_0_30cm/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_Q0.5_0-30cm.tif")/10
+
+####6.1 difference between SOC stock ssp1 and SOC stock actual----------------
+
+SOC__stock_loss_1 <- (soc_stock1 - SOC_stock_actual)
+
+plot(SOC_stock_loss_1)
+
+writeRaster(SOC_stock_loss_1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_stock/SOC_stock_loss_1.tif",
+            overwrite = T)
+
+
+####6.2 difference between SOC stock ssp5 and SOC stock actual----------------
+SOC__stock_loss_2 <- (soc_stock2 - SOC_stock_actual)
+
+plot(SOC__stock_loss_2)
+
+writeRaster(SOC__stock_loss_2,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_stock/SOC__stock_loss_2.tif",
+            overwrite = T)
 
