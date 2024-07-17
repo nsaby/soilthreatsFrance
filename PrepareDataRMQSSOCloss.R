@@ -6,7 +6,7 @@ setwd("~/ejp")
 
 r <- rast("~/covariates/LU_Actual_stack_100_2.tif")
 
-names(r) <-c("uUrban","Industrial","Arablecrops","Mixedcroplivestock",
+names(r) <-c("Urban","Industrial","Arablecrops","Mixedcroplivestock",
              "Livestockproduction","Forest","Transitionwoodlandshrub","Vineyards" ,
              "Fruitproduction","Oliveproduction","SHVA","Naturalgrassland",
              "Riceproduction","Infrastructure","Othernature","Wetlands",

@@ -25,7 +25,7 @@ fold_name: "fold"
 stratum_name: "stratum"
 
 # Model parameters
-depth_name: "0-20"
+depth_name: "0-30"
 depths_3D:
   - "0,5,15,30,60,100,200"
 use_rfe: "dorfe"
