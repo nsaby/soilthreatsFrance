@@ -519,29 +519,30 @@ prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
 
 ##5 actual stable SOC stock and future projection ----------------
+library(terra)
 
-SOC_stock_stable <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_greater45yr/maps/SOC_stock_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_greater45yr_Q0.5_0-30cm.tif")/10
+SOC_stock_stable <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_greater45yr/maps/SOC_stock_0_30cm_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_greater45yr_Q0.5_0-30cm.tif")/10
 
 ####5.1 sum actual stable SOC stock and dynamic future projection ssp1------------------
 
-SOC_stock_dyn_ssp1 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp1/maps/SOC_stock_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_greater45yr_Q0.5_0-30cm.tif")/10
+SOC_stock_dyn_ssp1 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp1/maps/SOC_stock_0_30cm_less45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_less45yr_Q0.5_0-30cm.tif")/10
 
 soc_stock1 = SOC_stock_stable + SOC_stock_dyn_ssp1
 
 plot(soc_stock1)
 
-writeRaster(soc_stock1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_stock/soc_stock1.tif",
+writeRaster(soc_stock1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_Loss/soc_stock1.tif",
             overwrite = T)
 
 ####5.2 sum actual stable carbon and dynamic future projection ssp5------------------
 
-SOC_stock_dyn_ssp5 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp5/maps/SOC_stock_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_greater45yr_Q0.5_0-30cm.tif")/10
+SOC_stock_dyn_ssp5 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp5/maps/SOC_stock_0_30cm_less45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_less45yr_Q0.5_0-30cm.tif")/10
 
 soc_stock2 = SOC_stock_stable + SOC_stock_dyn_ssp5
 
 plot(soc_stock2)
 
-writeRaster(soc2050_ssp5,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_stock/soc_stock2.tif",
+writeRaster(soc_stock2,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_Loss/soc_stock2.tif",
             overwrite = T)
 
 ##6 SOC stock loss----------------
@@ -550,20 +551,20 @@ SOC_stock_actual <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Outp
 
 ####6.1 difference between SOC stock ssp1 and SOC stock actual----------------
 
-SOC__stock_loss_1 <- (soc_stock1 - SOC_stock_actual)
+SOC_stock_loss_1 <- (soc_stock1 - SOC_stock_actual)
 
 plot(SOC_stock_loss_1)
 
-writeRaster(SOC_stock_loss_1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_stock/SOC_stock_loss_1.tif",
+writeRaster(SOC_stock_loss_1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_Loss/SOC_stock_loss_1.tif",
             overwrite = T)
 
 
 ####6.2 difference between SOC stock ssp5 and SOC stock actual----------------
-SOC__stock_loss_2 <- (soc_stock2 - SOC_stock_actual)
+SOC_stock_loss_2 <- (soc_stock2-SOC_stock_actual)
 
-plot(SOC__stock_loss_2)
+plot(SOC_stock_loss_2)
 
-writeRaster(SOC__stock_loss_2,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_stock/SOC__stock_loss_2.tif",
+writeRaster(SOC_stock_loss_2,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_Loss/SOC_stock_loss_2.tif",
             overwrite = T)
 
 
