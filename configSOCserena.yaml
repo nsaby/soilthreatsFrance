@@ -1,9 +1,11 @@
 # Input/Output files definition
-outputDir: "/home/nsaby/ejp/outputsocloss/"
-profilesStandardFile: "/home/nsaby/ejp/points/rmqs_socfracSERENA_profiles.csv"
-layersStandardFile: "/home/nsaby/ejp/points/rmqs_socfracSERENA_0_30cm_layers.csv"
-covarsDir: "/home/nsaby/covariates/socloss/covdsm/"
-maskFile: "/home/nsaby/covariates/socloss/covdsm/slope.tif"
+outputDir: "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/"
+profilesStandardFile: "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/points/Points_all/rmqs_socfracSERENA_profiles.csv"
+layersStandardFile: "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/points/Points_all/rmqs_socfracSERENA_0_30cm_layers.csv"
+covarsDir: "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/"
+maskFile: "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/stable/slope.tif"
+
+
 
 # The variable of interest
 voi: "soc" 
@@ -25,11 +27,11 @@ fold_name: "fold"
 stratum_name: "stratum"
 
 # Model parameters
-depth_name: "0-20"
+depth_name: "0-30"
 depths_3D:
   - "0,5,15,30,60,100,200"
 use_rfe: "dorfe"
-do_tune: "tune" # "notune"
+do_tune: "notune" # "tune"
 model_name: "rangerquantreg"
 n_folds: 10
 tune_metric: "mec" # "rmse" "rsq"
@@ -51,7 +53,7 @@ overwrite: true
 
 # Tiling and cores to parallelise
 tileside: 200
-cores: 16
+cores: 6
 
 # Advanced options. Only modify if you know what you are doing
 
@@ -107,3 +109,4 @@ tilesFileGpkg: "{outputDir}/other/tiles.gpkg"
 tilesDir : "{outputDir}/maps/{voi}/{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}"
 predictedMapVrt : "{outputDir}/maps/{voi}/{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}/{voi}.vrt"
 plotDir : "{outputDir}/plots/{voi}/{model_name}_{depth_name}_{transformation}_{use_rfe}_{do_tune}"
+
