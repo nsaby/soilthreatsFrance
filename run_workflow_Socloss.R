@@ -519,7 +519,6 @@ prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
 
 ##5 actual stable SOC stock and future projection ----------------
-library(terra)
 
 SOC_stock_stable <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_greater45yr/maps/SOC_stock_0_30cm_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_greater45yr_Q0.5_0-30cm.tif")/10
 
@@ -558,7 +557,6 @@ plot(SOC_stock_loss_1)
 writeRaster(SOC_stock_loss_1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_Loss/SOC_stock_loss_1.tif",
             overwrite = T)
 
-
 ####6.2 difference between SOC stock ssp5 and SOC stock actual----------------
 SOC_stock_loss_2 <- (soc_stock2-SOC_stock_actual)
 
@@ -566,6 +564,134 @@ plot(SOC_stock_loss_2)
 
 writeRaster(SOC_stock_loss_2,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_Loss/SOC_stock_loss_2.tif",
             overwrite = T)
+
+plot(SOC_stock_actual/10)
+
+
+# Soil sealing------------------
+
+library(terra)
+##1 Data loading------------------
+luisa_base <-  rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFranceActual.tiff")
+luisa_2050 <- rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFrance2050.tiff")
+
+nuts1 <- read_sf("")
+nuts3 <- read_sf("")
+
+# reclassify LU maps actual and future --------
+
+# replace the LU classes by the artificialized one of 2050 map
+
+reclass_2050 <- matrix(c(0,999,
+                         1,1,
+                         2,2,
+                         3,999,
+                         4,999,
+                         5,999,
+                         6,999,
+                         7,999,
+                         8,999,
+                         9,999,
+                         10,999,
+                         11,999,
+                         12,999,
+                         13,999,
+                         14,999,
+                         15,999,
+                         16,999,
+                         17,999,
+                         18,999,
+                         19,999,
+                         20,999,
+                         21,21,
+                         22,999,
+                         23,999,
+                         24,999,
+                         25,25),
+                       ncol = 2,
+                       byrow = TRUE)
+
+
+chm_classified_2050 <- terra::classify(luisa_2050,
+                                       reclass_2050)
+
+# create classification matrix
+reclass_df <- matrix(c(2110,999,
+                       2120,999,
+                       2130,999,
+                       2210,999,
+                       2220,999,
+                       2230,999,
+                       2310,999,
+                       2410,999,
+                       2420,999,
+                       2430,999,
+                       2440,999,
+                       3110,999,
+                       3120,999,
+                       3130,999,
+                       3210,999,
+                       3220,999,
+                       3230,999,
+                       3240,999,
+                       3330,999,
+                       3340,999,
+                       1111,1,
+                       1121,1,
+                       1122,1,
+                       1123,1,
+                       1130,25,
+                       1210,2,
+                       1221,21,
+                       1222,21,
+                       1230,21,
+                       1241,21,
+                       1242,21,
+                       1310,2,
+                       1320,2,
+                       1330,1,
+                       1410,25,
+                       1421,25,
+                       1422,1,
+                       3310,999,
+                       3320,999,
+                       3330,999,
+                       3340,999,
+                       3350,999,
+                       4000,999,
+                       5110,999,
+                       5120,999,
+                       5210,999,
+                       5220,999,
+                       5230,999),
+                     ncol = 2,
+                     byrow = TRUE)
+
+chm_classified_base <- terra::classify(luisa_base,
+                                       reclass_df)
+# Prepare nuts raster --------
+
+nuts3$myid <- as.numeric(as.factor(nuts3$NUTS_ID))
+
+nutsG <- rasterize(nuts3,
+                   luisa_base,
+                   field="myid"
+)
+# Combine nuts and lu ----------
+
+chm_classified_base_nuts <- (1000 * nutsG) + chm_classified_base
+chm_classified_2050_nuts <- (1000 * nutsG) + chm_classified_2050
+
+gc()
+
+
+
+
+
+
+
+
+
 
 
 
