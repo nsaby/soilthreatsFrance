@@ -575,8 +575,7 @@ library(terra)
 luisa_base <-  rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFranceActual.tiff")
 luisa_2050 <- rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFrance2050.tiff")
 
-nuts1 <- read_sf("")
-nuts3 <- read_sf("")
+nuts3 <- read_sf("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/SHP/NUTS3_France.shp")
 
 # reclassify LU maps actual and future --------
 
