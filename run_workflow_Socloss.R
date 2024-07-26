@@ -575,7 +575,7 @@ library(terra)
 luisa_base <-  rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFranceActual.tiff")
 luisa_2050 <- rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFrance2050.tiff")
 
-nuts3 <- read_sf("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/SHP/NUTS3_France.shp")
+nuts3 <- vect("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/SHP/NUTS3_France.shp")
 
 # reclassify LU maps actual and future --------
 
@@ -670,22 +670,32 @@ chm_classified_base <- terra::classify(luisa_base,
                                        reclass_df)
 # Prepare nuts raster --------
 
+resNuts3 <- terra::zonal(imp.res,
+                         chm_classified_base_nuts, 
+                         na.rm=TRUE   )
+
+
+
 nuts3$myid <- as.numeric(as.factor(nuts3$NUTS_ID))
 
 nutsG <- rasterize(nuts3,
                    luisa_base,
                    field="myid"
 )
+
 # Combine nuts and lu ----------
 
-chm_classified_base_nuts <- (1000 * nutsG) + chm_classified_base
-chm_classified_2050_nuts <- (1000 * nutsG) + chm_classified_2050
+chm_classified_base_nuts <- (100 * nutsG) + chm_classified_base
 
-gc()
+chm_classified_2050_nuts <- (100* nutsG) + chm_classified_2050
+
+# soil threat ---------
+
+SoilSealing <- chm_classified_2050_nuts - chm_classified_base_nuts
+plot(SoilSealing)
 
 
-
-
+plot(chm_classified_2050_nuts,background=NULL)
 
 
 
