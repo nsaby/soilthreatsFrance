@@ -1,6 +1,41 @@
 library(isric.dsm.base)
 library(argparser)
+library(terra)
 
+## Functions to clean folder ------
+CleanFolder <- function(FodlerDSM){
+  f <- list.files(FodlerDSM , 
+                  include.dirs = F, 
+                  full.names = T, 
+                  recursive = T)
+  file.remove(f)
+  
+}
+
+## Functions to copy covariates ------
+CopyCovariates <- function( rep ,
+                            covariates,
+                            out ){
+  
+  
+  list_of_files <- list.files( paste0(rep,covariates) ,
+                               full.names = TRUE)
+  
+  lapply(list_of_files, function(i) {
+    file.copy(from = i,
+              to = paste0(out, basename(i)))
+  })
+  
+  
+}
+
+
+FodlerAllCovariates = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/"
+FodlerDSM = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/"
+
+
+mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France"
+if ( !  file.exists(mainDir))  dir.create(mainDir) 
 
 # 0 Initialization -----------------
 
@@ -13,8 +48,7 @@ p <- add_argument(
 )
 config <- yaml::read_yaml(parse_args(p)$config_file, eval.expr = TRUE)
 
- prof <- read.csv(config$profilesStandardFile)
-
+prof <- read.csv(config$profilesStandardFile)
 
 # The covariate should be stored in different folders
 # dynactual : climate and LU for present
@@ -29,31 +63,23 @@ config <- yaml::read_yaml(parse_args(p)$config_file, eval.expr = TRUE)
 
 # prepare list of covariates
 
-# remove former files
-f <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", 
-                include.dirs = F, 
-                full.names = T, recursive = T)
-file.remove(f)
+CleanFolder(FodlerDSM)
 
+# copy covariates stable and dyn
+CopyCovariates(FodlerAllCovariates,
+               "stable/",
+               FodlerDSM)
 
-list_of_files <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/stable/",
-                            full.names = TRUE)
-lapply(list_of_files, function(i) {
-  file.copy(from = i, to = paste0("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", basename(i)))
-})
-
-list_of_files <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/dynactual/",
-                            full.names = TRUE)
-lapply(list_of_files, function(i) {
-  file.copy(from = i, to = paste0("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", basename(i)))
-})
-
+# copy covariates  dyn
+CopyCovariates(FodlerAllCovariates,
+               "dynactual/",
+               FodlerDSM)
 
 # create a folder to gather model outputs
-mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socact"
+mainDir <- "Output_SOC_France/socact"
 if ( !  file.exists(mainDir))  dir.create(mainDir) 
 
-config$covarsDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/"
+config$covarsDir = FodlerDSM
 config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socact"
 config$voi = "soc"
 
@@ -61,11 +87,9 @@ need2fit = TRUE
 prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
 
-#Copy the this ouput to the soildsm to use it in the next soil threats computation
 file.copy("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socact/maps/soc/rangerquantreg_0-30_notransform_dorfe_notune/soc_Q0.5_0-30cm.tif",
-          "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/soildsm/socactual.tif",
+          paste0(FodlerAllCovariates,"soildsm/socactual.tif"),
           overwrite = T)
-
 
 ## 2 Stable SOC actual  ----------
 
@@ -73,15 +97,14 @@ file.copy("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/s
 mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socgreater45yrsoc"
 if ( !  file.exists(mainDir))  dir.create(mainDir) 
 
-config$covarsDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/"
-config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socgreater45yrsoc"
+config$covarsDir = FodlerDSM
+config$outputDir = mainDir
 config$voi = "socgreater45yrsoc"
 
 need2fit = TRUE
 prediction = TRUE
 
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
-
 
 ## 3 SOC dynamic actual -------
 
@@ -90,13 +113,13 @@ source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R
 mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsoc"
 if ( !  file.exists(mainDir))  dir.create(mainDir) 
 
-config$covarsDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/"
-config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsoc"
+config$covarsDir = FodlerDSM
+config$outputDir = mainDir
 config$voi = "socless45yrsoc"
 
 need2fit = TRUE
 prediction = FALSE
-source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
+source(file = "ISRICStepsDSM.R")
 
 ## 4  SOC  dynamic prediction -----------
 
@@ -105,74 +128,78 @@ source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R
 mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1"
 if ( !  file.exists(mainDir))  dir.create(mainDir) 
 
+#Clean the covdsm folder and inser the future and stable covariates
+CleanFolder(FodlerDSM)
+
+
+CopyCovariates(FodlerAllCovariates,
+               "stable/",
+               FodlerDSM)
+
+CopyCovariates(FodlerAllCovariates,
+               "dynfutur/LU_2050",
+               FodlerDSM)
+
+CopyCovariates(FodlerAllCovariates,
+               "dynfutur/ssp1",
+               FodlerDSM)
+
+
 # copy first the output from dsm into  socless45yrsocssp1
 from.dir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsoc/model/"
 outDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1/"
 system(paste0("cp -R ",from.dir," ", outDir))
 
-#Clean the covdsm folder and insert the future and stable covariates
-f <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", 
-                include.dirs = F, 
-                full.names = T, recursive = T)
-file.remove(f)
-
-#predict socless45yr in ssp1
-
-list_of_files <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/stable/",
-                            full.names = TRUE)
-
-lapply(list_of_files, function(i) {
-  file.copy(from = i, to = paste0("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", basename(i)),
-  overwrite = TRUE)})
-
-list_of_files <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/dynfutur/ssp1/",
-                            full.names = TRUE)
-lapply(list_of_files, function(i) {
-  file.copy(from = i, to = paste0("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", basename(i)) ,
-            overwrite = TRUE)
-
-})
 
 config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1/"
 config$voi = "socless45yrsoc"
-#config$modelFittedFile= "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1/model/socless45yrsoc/model-fitted_rangerquantreg_0-30_notransform_dorfe_notune.RDS"
+config$modelFittedFile= "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1/model/socless45yrsoc/model-fitted_rangerquantreg_0-30_notransform_dorfe_tune.RDS"
 
 need2fit = FALSE
 prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
-
 
 ####4.2 Predict SOC dynamic ssp5----------------
 
 mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5"
 if ( !  file.exists(mainDir))  dir.create(mainDir) 
 
-# copy first the output from dsm into  socless45yrsocssp5
+#copy first the output from dsm into  socless45yrsocssp5
 from.dir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsoc/model/"
 outDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5/"
 system(paste0("cp -R ",from.dir," ", outDir))
 
-list_of_files <- list.files("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/dynfutur/ssp5/",
-                            full.names = TRUE)
-lapply(list_of_files, function(i) {
-  file.copy(from = i, to = paste0("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/covdsm/", basename(i)) ,
-            overwrite = TRUE
-  )
-})
+
+CleanFolder(FodlerDSM)
+
+
+CopyCovariates(FodlerAllCovariates,
+               "stable/",
+               FodlerDSM)
+
+CopyCovariates(FodlerAllCovariates,
+               "dynfutur/LU_2050",
+               FodlerDSM)
+
+CopyCovariates(FodlerAllCovariates,
+               "dynfutur/ssp5",
+               FodlerDSM)
 
 config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5/"
 config$voi = "socless45yrsoc"
+config$modelFittedFile= "Output_SOC_France/socless45yrsoc/model/socless45yrsoc/model-fitted_rangerquantreg_0-30_notransform_dorfe_tune.RDS"
 
 need2fit = FALSE
 prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
 
 ##  5 Actual stable carbon and future projection ----------
-stable = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socgreater45yrsoc/maps/socgreater45yrsoc/rangerquantreg_0-30_notransform_dorfe_notune/socgreater45yrsoc_Q0.5_0-30cm.tif")/10
+stable = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socgreater45yrsoc/maps/socgreater45yrsoc/rangerquantreg_0-30_notransform_dorfe_tune/socgreater45yrsoc_Q0.5_0-30cm.tif")/10
+
 
 ####5.1 sum actual stable carbon and dynamic future projection ssp1------------------
 
-futurdyn_ssp1 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1/maps/socless45yrsoc/rangerquantreg_0-30_notransform_dorfe_notune/socless45yrsoc_Q0.5_0-30cm.tif")/10
+futurdyn_ssp1 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp1/maps/socless45yrsoc/rangerquantreg_0-30_notransform_dorfe_tune/socless45yrsoc_Q0.5_0-30cm.tif")/10
 
 soc2050_ssp1 = stable + futurdyn_ssp1
 
@@ -181,9 +208,15 @@ plot(soc2050_ssp1)
 writeRaster(soc2050_ssp1,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/soildsm/soc2050_ssp1.tif",
             overwrite = T)
 
+#calculate the difference between actual soc and soc under scenario ssp1
+
+SOC_actual_less_ssp1 <- (stable - soc2050_ssp1)/stable
+
+plot(SOC_actual_less_ssp1)
+
 ####5.2 sum actual stable carbon and dynamic future projection ssp5------------------
 
-futurdyn_ssp5 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5/maps/socless45yrsoc/rangerquantreg_0-30_notransform_dorfe_notune/socless45yrsoc_Q0.5_0-30cm.tif")/10
+futurdyn_ssp5 = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5/maps/socless45yrsoc/rangerquantreg_0-30_notransform_dorfe_tune/socless45yrsoc_Q0.5_0-30cm.tif")/10
 
 soc2050_ssp5 = stable + futurdyn_ssp5
 
@@ -191,12 +224,6 @@ plot(soc2050_ssp5)
 
 writeRaster(soc2050_ssp5,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/soildsm/soc2050_ssp5.tif",
             overwrite = T)
-
-#calculate the difference between actual soc and soc under scenario ssp1
-
-SOC_actual_less_ssp1 <- (stable - soc2050_ssp1)/stable
-
-plot(SOC_actual_less_ssp1)
 
 
 #calculate the difference between actual soc and soc under scenario ssp5
@@ -566,136 +593,6 @@ writeRaster(SOC_stock_loss_2,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/
             overwrite = T)
 
 plot(SOC_stock_actual/10)
-
-
-# Soil sealing------------------
-
-library(terra)
-##1 Data loading------------------
-luisa_base <-  rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFranceActual.tiff")
-luisa_2050 <- rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFrance2050.tiff")
-
-nuts3 <- vect("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/SHP/NUTS3_France.shp")
-
-# reclassify LU maps actual and future --------
-
-# replace the LU classes by the artificialized one of 2050 map
-
-reclass_2050 <- matrix(c(0,999,
-                         1,1,
-                         2,2,
-                         3,999,
-                         4,999,
-                         5,999,
-                         6,999,
-                         7,999,
-                         8,999,
-                         9,999,
-                         10,999,
-                         11,999,
-                         12,999,
-                         13,999,
-                         14,999,
-                         15,999,
-                         16,999,
-                         17,999,
-                         18,999,
-                         19,999,
-                         20,999,
-                         21,21,
-                         22,999,
-                         23,999,
-                         24,999,
-                         25,25),
-                       ncol = 2,
-                       byrow = TRUE)
-
-
-chm_classified_2050 <- terra::classify(luisa_2050,
-                                       reclass_2050)
-
-# create classification matrix
-reclass_df <- matrix(c(2110,999,
-                       2120,999,
-                       2130,999,
-                       2210,999,
-                       2220,999,
-                       2230,999,
-                       2310,999,
-                       2410,999,
-                       2420,999,
-                       2430,999,
-                       2440,999,
-                       3110,999,
-                       3120,999,
-                       3130,999,
-                       3210,999,
-                       3220,999,
-                       3230,999,
-                       3240,999,
-                       3330,999,
-                       3340,999,
-                       1111,1,
-                       1121,1,
-                       1122,1,
-                       1123,1,
-                       1130,25,
-                       1210,2,
-                       1221,21,
-                       1222,21,
-                       1230,21,
-                       1241,21,
-                       1242,21,
-                       1310,2,
-                       1320,2,
-                       1330,1,
-                       1410,25,
-                       1421,25,
-                       1422,1,
-                       3310,999,
-                       3320,999,
-                       3330,999,
-                       3340,999,
-                       3350,999,
-                       4000,999,
-                       5110,999,
-                       5120,999,
-                       5210,999,
-                       5220,999,
-                       5230,999),
-                     ncol = 2,
-                     byrow = TRUE)
-
-chm_classified_base <- terra::classify(luisa_base,
-                                       reclass_df)
-# Prepare nuts raster --------
-
-resNuts3 <- terra::zonal(imp.res,
-                         chm_classified_base_nuts, 
-                         na.rm=TRUE   )
-
-
-
-nuts3$myid <- as.numeric(as.factor(nuts3$NUTS_ID))
-
-nutsG <- rasterize(nuts3,
-                   luisa_base,
-                   field="myid"
-)
-
-# Combine nuts and lu ----------
-
-chm_classified_base_nuts <- (100 * nutsG) + chm_classified_base
-
-chm_classified_2050_nuts <- (100* nutsG) + chm_classified_2050
-
-# soil threat ---------
-
-SoilSealing <- chm_classified_2050_nuts - chm_classified_base_nuts
-plot(SoilSealing)
-
-
-plot(chm_classified_2050_nuts,background=NULL)
 
 
 
