@@ -592,6 +592,8 @@ plot(SOC_stock_loss_2)
 writeRaster(SOC_stock_loss_2,"E:/SERENA/WP5_bundles/France/ISRIC_threats_France/SOC_Loss/SOC_stock_loss_2.tif",
             overwrite = T)
 
+
+
 plot(SOC_stock_actual/10)
 
 
