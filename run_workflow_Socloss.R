@@ -610,3 +610,6 @@ plot(SOC_stock_actual/10)
 
 
 
+
+
+
