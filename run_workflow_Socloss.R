@@ -76,7 +76,7 @@ CopyCovariates(FodlerAllCovariates,
                FodlerDSM)
 
 # create a folder to gather model outputs
-mainDir <- "Output_SOC_France/socact"
+mainDir <- "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socact"
 if ( !  file.exists(mainDir))  dir.create(mainDir) 
 
 config$covarsDir = FodlerDSM
@@ -187,11 +187,13 @@ CopyCovariates(FodlerAllCovariates,
 
 config$outputDir = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5/"
 config$voi = "socless45yrsoc"
-config$modelFittedFile= "Output_SOC_France/socless45yrsoc/model/socless45yrsoc/model-fitted_rangerquantreg_0-30_notransform_dorfe_tune.RDS"
+config$modelFittedFile= "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsocssp5/model/socless45yrsoc/model-fitted_rangerquantreg_0-30_notransform_dorfe_tune.RDS"
 
 need2fit = FALSE
 prediction = TRUE
 source(file = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/ISRICStepsDSM.R")
+
+library(terra)
 
 ##  5 Actual stable carbon and future projection ----------
 stable = rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socgreater45yrsoc/maps/socgreater45yrsoc/rangerquantreg_0-30_notransform_dorfe_tune/socgreater45yrsoc_Q0.5_0-30cm.tif")/10
