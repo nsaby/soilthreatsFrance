@@ -600,6 +600,10 @@ plot(SOC_stock_actual/10)
 
 
 
+#Sealing
+
+
+
 
 
 
