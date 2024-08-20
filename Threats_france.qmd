@@ -1,0 +1,558 @@
+---
+title: "Soil threats for France by 2050"
+format: 
+   pdf: 
+    toc: true
+    toc-depth: 4
+    toc-title: Table of contents
+   
+header-includes:
+  - \usepackage{fancyhdr}
+  - \usepackage{tikz}
+  - \AtBeginDocument{\thispagestyle{empty}\begin{tikzpicture}[remember picture,overlay]
+          \node at (current page.center) [yshift=4cm] [anchor=north,yshift=-2cm] {\Huge\textbf{Soil threats bundles for France by 2050}};
+          \node at (current page.south) [yshift=5cm] [anchor=north,yshift=-2cm] {\normalsize\textbf{July 2024}};
+          \end{tikzpicture}\clearpage}
+---
+
+```{r}
+library(terra)
+library(tmap)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+```
+
+## 1. Introduction
+
+Table 1. List of indicators ("ideal” or “realistic”) used for the different soil threats selected for a harmonization of assessment of soil threats at the French territory scale (based on SERENA T2.3, extracted from D5.1)
+
+| Soil threats    | Type      | Indicator                                        | Short definition                                                         |
+|-----------------|-----------|--------------------------------------------------|--------------------------------------------------------------------------|
+| SOC loss        | Ideal     | Change in SOC stocks (kC ha^-1^ yr^-1^)          | Change over time in soil organic carbon stocks over the whole soil depth |
+| Soil erosion    | Realistic | Soil loss by water erosion (t ha^-1^ yr^-1^)     | Yearly soil losses by water erosion                                      |
+| Soil compaction | Ideal     | Change in topsoil bulk density (kg m^-3^ yr^-1^) | Change over time in topsoil bulk density                                 |
+| Soil sealing    | Realistic | Degree of soil sealing change (%)                | Change in the proportion of an area that is covered by artificial,       |
+
+## 2. Map quality
+
+### 2.1. Soil organic carbon content (SOC) as common variable in soil threats assessment
+
+SOC is used as covariate in the DSM modelling of compaction and erosion. We computed the SOC present, stable and dynamic fractions. The dynamic fraction, expected to evolve in time was predicted under land use and climate change scenarios (SSP1 and SSP5).
+
+#### 2.1.1. DSM predictive model for SOC present, stable and dynamic
+
+Table 2. Cross-validation performances of the prediction model for SOC applying the QRF algorithm
+
+| Indicator   | Unit | R^2^ | RMSE  | MAE  | CCC  | MEC  |
+|-------------|------|------|-------|------|------|------|
+| SOC present | \%   | 0.42 | 15.52 | 9.44 | 0.59 | 0.42 |
+| SOC stable  | \%   | 0.42 | 11.63 | 7.06 | 0.59 | 0.42 |
+| SOC dynamic | \%   | 0.42 | 5.44  | 3.31 | 0.59 | 0.42 |
+
+#### I) Variable importance
+
+```{r}
+
+###model SOC present
+# List of file paths and plot titles
+plots_list <- list(
+  list(file_path = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socact/model/soc/model-fitted_rangerquantreg_0-30_notransform_dorfe_notune.RDS",
+       title = "SOC present",
+       low_color = "#FFAA80", high_color = "#A91D3A"),
+  list(file_path = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socgreater45yrsoc/model/socgreater45yrsoc/model-fitted_rangerquantreg_0-30_notransform_dorfe_notune.RDS",
+       title = "SOC stable",
+       low_color = "lightgreen", high_color = "darkgreen"),
+  list(file_path = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/socless45yrsoc/model/socless45yrsoc/model-fitted_rangerquantreg_0-30_notransform_dorfe_notune.RDS",
+       title = "SOC dynamic",
+       low_color = "#BBE9FF", high_color = "#00215E")
+)
+
+# Function to create plot
+create_plot <- function(file_path, title, low_color, high_color) {
+  rf <- readRDS(file_path)
+  rf_var <- as.data.frame(rf$variable.importance)
+  rf_var <- rownames_to_column(rf_var, var = "Covariate")
+  colnames(rf_var)[2] <- "Importance"
+  rf_var10 <- rf_var %>% slice_max(rf_var$Importance, n=10)
+  plot <- ggplot(data = rf_var10, aes(x = reorder(Covariate , Importance), y = Importance, fill = Importance)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    coord_flip() +
+    ylab("") +
+    xlab("") +
+    guides(fill = FALSE) +
+    scale_fill_gradient(low = low_color, high = high_color) +
+   theme_minimal() +  # Adjust theme as needed
+    theme(
+      text = element_text(size = 11),  # Adjust text size
+      plot.title = element_text(size = 12, face = "bold"),  # Title size and style
+      axis.text.x = element_text(size = 6)  # Adjust y-axis text size
+    ) +
+    ggtitle(title)
+  return(plot)
+}
+
+# Create list of plots
+plots <- lapply(plots_list, function(plot_info) {
+  create_plot(plot_info$file_path, plot_info$title, plot_info$low_color, plot_info$high_color)
+})
+
+# Arrange plots in one row
+grid.arrange(grobs = plots, nrow = 1)
+```
+
+#### II) Map SOC present and under future land use and climate scenarios (SSP1 and SSP5)
+
+```{r}
+# List of raster file paths
+SOC_present <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/soildsm/socactual.tif")/10
+names(SOC_present) <- "SOC_present"
+
+map1 <- tm_shape(SOC_present[[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Present SOC content"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+    tm_layout(legend.outside = T,
+              inner.margins=c(.08,.06, .05, .04))
+
+
+#--------------------------------
+SOC_2050_ssp1 <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/soildsm/soc2050_ssp1.tif")/10
+names(SOC_2050_ssp1) <- "Future SOC content (SSP1)"
+
+map2 <- tm_shape(SOC_2050_ssp1 [[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Future SOC content (SSP1)"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+   tm_layout(legend.outside = T,
+             inner.margins=c(.08,.06, .05, .04))
+
+
+#--------------------------------------
+SOC_2050_ssp5 <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Covariates/soildsm/soc2050_ssp5.tif")/10
+names(SOC_2050_ssp5) <- "SOC_2050_SSP5"
+
+map3 <- tm_shape(SOC_2050_ssp5 [[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Future SOC content (SSP5)"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+   tm_layout(legend.outside = T,
+             inner.margins=c(.08,.06, .05, .04))
+
+tmap_arrange(map1, map2, map3, nrow = 1)
+
+#difference_soc_ssp1_ssp5 <- SOC_2050_ssp1-SOC_2050_ssp5
+#plot(difference_soc_ssp1_ssp5)
+
+```
+
+Difference between SOC content present and future maps
+
+```{r}
+
+SOC_SSP1_Less_SOC_actual= (SOC_present-SOC_2050_ssp1)/SOC_present
+
+names(SOC_SSP1_Less_SOC_actual) <- "SOC_ssp1_less-SOC_actual"
+
+map4 <- tm_shape(SOC_SSP1_Less_SOC_actual[[1]]) + 
+  tm_raster(n=10,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Difference present SOC 
+  less future SOC SSP1"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("right", "bottom"))+
+  tm_layout(legend.outside = T,
+            inner.margins=c(.06,.05, .04, .03))
+
+
+SOC_SSP5_Less_SOC_actual= (SOC_present-SOC_2050_ssp5)/SOC_present
+
+names(SOC_SSP5_Less_SOC_actual) <- "SOC_actual_less_ssp5"
+
+map5 <- tm_shape(SOC_SSP5_Less_SOC_actual[[1]]) + 
+  tm_raster(n=10,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Difference present SOC 
+ less future SOC SSP5"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("right", "bottom"))+
+    tm_layout(legend.outside = T,
+              inner.margins=c(.06,.05, .04, .03))
+
+
+tmap_arrange(map4, map5,nrow = 1)
+
+```
+
+### 2.2. Compaction
+
+#### 2.2.1. DSM predictive model for bulk density
+
+Changes in bulk density (BD) in topsoil (0-30 cm), the chosen indicator for soil compaction, was calculated as the difference in bulk density in the topsoil between 2005 (date of soil sampling in the French soil database) and 2050.
+
+To project bulk density to 2050, we applied a DSM approach (Grunwald et al., 2011; McBratney et al., 2003; Minasny and McBratney, 2016) based on the Quantile Regression Forest (QRF) algorithm that was built up on the current map in a first step. In a second step, the covariates supposed to evolve from present to 2050 (land use and climate) were replaced in the model for the 2050 projection.
+
+We used QRF in the R package ranger package. Four different values were computed to characterize the distribution of BD: median (0.50 quantile), mean (0.05 quantile) and 0.95 quantile. The model was tuned by 10 fold cross-validation and [10 repetitions?.]{.underline} The *ntree* number was set at 500.
+
+Table 3. Cross-validation performances of the prediction model for bulk density applying the QRF algorithm
+
+| Indicator           | Unit    | R^2^ | RMSE | MAE  | CCC  | MEC  |
+|---------------------|---------|------|------|------|------|------|
+| Bulk density actual | kg/m^3^ | 0.40 | 0.17 | 0.13 | 0.54 | 0.40 |
+
+#### I) Variable importance
+
+```{r}
+rf_gsm <- readRDS("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/da_pond_actual/model/da_pond/model-fitted_rangerquantreg_0-30_notransform_dorfe_notune.RDS")
+
+rf_gsm_var <- as.data.frame(rf_gsm$variable.importance)
+
+rf_gsm_var <- rownames_to_column(rf_gsm_var, var = "Covariate")
+
+colnames(rf_gsm_var)[2] <- "Importance"
+
+head(rf_gsm_var)
+
+#select top 10 variables
+
+rf_gsm_var10 <-  rf_gsm_var %>% slice_max(rf_gsm_var$Importance, n=10)
+
+head(rf_gsm_var)
+
+ggplot(data = rf_gsm_var10, aes(x = reorder(Covariate , Importance), y = Importance, fill = Importance)) +
+  
+  geom_bar(stat = "identity", position = "dodge") +
+  
+  coord_flip() +
+  
+  ylab("") +
+  
+  xlab("") +
+  
+  guides(fill = FALSE) +
+  
+  scale_fill_gradient(low = "lightgreen", high = "darkgreen") +
+  
+  theme(text = element_text(size = 15)) + ggtitle("Variable importance present bulk density")
+
+
+```
+
+#### II) Map present bulk density
+
+Low bulk density is present in the mountain areas, and higher bulk density if found in the lowlands.
+
+```{r}
+
+Bulk_density_present <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/da_pond_actual/maps/da_pond/rangerquantreg_0-30_notransform_dorfe_notune/da_pond_Q0.5_0-30cm.tif")/10
+
+names(Bulk_density_present) <- "Present_Bulk_density"
+
+tm_shape(Bulk_density_present[[1]]) + 
+  tm_raster(style="quantile",
+            n=14,
+           palette = "viridis",
+            midpoint = NA, #  median(r[[1]],na.rm=T),
+           title= "Present bulk density"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.7,position=c("left", "bottom"))+
+     tm_layout(legend.outside = T,
+             inner.margins=c(.08,.06, .05, .04))
+
+
+
+```
+
+#### III) Map bulk density under land use change and climate scenarios (SSP1 and SSP5)
+
+```{r}
+BD_2050_ssp1 <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/da_pond_ssp1/maps/da_pond/rangerquantreg_0-30_notransform_dorfe_notune/da_pond_Q0.5_0-30cm.tif")/10
+
+names(BD_2050_ssp1) <- "Bulk_density_2050_SSP1"
+
+map6 <- tm_shape(BD_2050_ssp1[[1]]) + 
+  tm_raster(style="quantile",
+            n=10,
+            palette = "viridis",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Future bulk density (SSP1)") +
+  tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.7,position=c("left", "bottom"))+
+   tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+
+#--------------------------------------
+BD_2050_ssp5 <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/da_pond_ssp5/maps/da_pond/rangerquantreg_0-30_notransform_dorfe_notune/da_pond_Q0.5_0-30cm.tif")/10
+
+names(BD_2050_ssp5) <- "Bulk_density_2050_SSP5"
+
+map7 <- tm_shape(BD_2050_ssp5[[1]]) + 
+  tm_raster(style="quantile",
+            n=10,
+            palette = "viridis",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Future bulk density (SSP5)") +
+  tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.7,position=c("left", "bottom"))+
+    tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+tmap_arrange(map6 , map7,nrow = 1)
+
+
+```
+
+#### VI) Compaction Map bulk density under land use change and climate scenarios (SSP1 and SSP5)
+
+There is high compaction in the mountain areas. This means that with increasing temperature, there is spected faster decomposition of SOC content and those areas would be more prone to increase the bulk density because of the land use change that would driver the compaction. This trend is confirmed in the variable importance where the SOC content and the maximum temperature are the most relevant.
+
+```{r}
+#Compaction 1= diference between future bulk density ssp1 and present bulk density
+
+Compaction_1 = BD_2050_ssp1 - Bulk_density_present
+
+map8 <- tm_shape(Compaction_1 [[1]]) + 
+  tm_raster(#style="quantile",
+            n=10,
+            palette = "viridis",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Compaction 1") +
+  tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.7,position=c("left", "bottom"))+tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+#------------------------------------
+
+#Compaction 2= diference between future bulk density ssp5 and present bulk density
+
+Compaction_2= BD_2050_ssp5 - Bulk_density_present
+
+map9 <- tm_shape(Compaction_2[[1]]) + 
+  tm_raster(#style="quantile",
+            n=10,
+            palette = "viridis",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Compaction 2") +
+  tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.7,position=c("left", "bottom"))+  tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+tmap_arrange(map8, map9,nrow = 1)
+```
+
+### 2.3. Soil organic carbon (SOC) stock loss
+
+#### 2.3.1. DSM predictive model for SOC stock present, stable and dynamic fractions
+
+Overall the model performance is poor
+
+| Indicator                  | Unit | R^2^ | RMSE  | MAE   | CCC  | MEC  |
+|----------------------------|------|------|-------|-------|------|------|
+| Present SOC stock          | \%   | 0.32 | 28.09 | 20.26 | 0.48 | 0.32 |
+| SOC stock stable fraction  | \%   | 0.32 | 18.28 | 13.16 | 0.48 | 0.32 |
+| SOC stock dynamic fraction | \%   | 0.32 | 9.83  | 7.07  | 0.48 | 0.32 |
+
+#### I) Variable importance
+
+```{r}
+###model Present SOC stock
+# List of file paths and plot titles
+plots_list <- list(
+  list(file_path = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_actual/model/SOC_stock_0_30cm/model-fitted_rangerquantreg_0-30_notransform_dorfe_notune.RDS",
+       title = "Present 
+SOC stock",
+       low_color = "#FFAA80", high_color = "#A91D3A"),
+  list(file_path = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_greater45yr/model/SOC_stock_0_30cm_greater45yr/model-fitted_rangerquantreg_0-30_notransform_dorfe_notune.RDS",
+       title = " SOC stock 
+stable fraction",
+       low_color = "lightgreen", high_color = "darkgreen"),
+  list(file_path = "E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yr/model/SOC_stock_0_30cm_less45yr/model-fitted_rangerquantreg_0-30_notransform_dorfe_notune.RDS",
+       title = "SOC stock 
+dynamic fraction",
+       low_color = "#BBE9FF", high_color = "#00215E")
+)
+
+# Function to create plot
+create_plot <- function(file_path, title, low_color, high_color) {
+  rf <- readRDS(file_path)
+  rf_var <- as.data.frame(rf$variable.importance)
+  rf_var <- rownames_to_column(rf_var, var = "Covariate")
+  colnames(rf_var)[2] <- "Importance"
+  rf_var10 <- rf_var %>% slice_max(rf_var$Importance, n=10)
+  plot <- ggplot(data = rf_var10, aes(x = reorder(Covariate , Importance), y = Importance, fill = Importance)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    coord_flip() +
+    ylab("") +
+    xlab("") +
+    guides(fill = FALSE) +
+    scale_fill_gradient(low = low_color, high = high_color) +
+   theme(
+      text = element_text(size = 11),  # Adjust text size
+      plot.title = element_text(size = 10, face = "bold"),  # Title size and style
+      axis.text.x =  element_text(size = 6)  # Adjust y-axis text size
+    ) +
+    ggtitle(title)
+  return(plot)
+}
+
+# Create list of plots
+plots <- lapply(plots_list, function(plot_info) {
+  create_plot(plot_info$file_path, plot_info$title, plot_info$low_color, plot_info$high_color)
+})
+
+# Arrange plots in one row
+grid.arrange(grobs = plots, nrow = 1)
+```
+
+#### II) Map present SOC stock
+
+```{r}
+# List of raster file paths
+SOC_stock_present <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_actual/maps/SOC_stock_0_30cm/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_Q0.5_0-30cm.tif")/10
+
+ tm_shape(SOC_stock_present [[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "Present SOC stock content"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+   tm_layout(legend.outside = T,
+             inner.margins=c(.08,.06, .05, .04))
+
+
+
+```
+
+#### III) Map SOC stock stable and dynamic fractions (SSP1), (SSP5)
+
+```{r}
+
+SOC_stock_stable <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_greater45yr/maps/SOC_stock_0_30cm_greater45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_greater45yr_Q0.5_0-30cm.tif")/10
+
+map10 <- tm_shape(SOC_stock_stable [[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "SOC stock stable fraction"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+  tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+#--------------------------------
+SOC_stock_dyn_ssp1 <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp1/maps/SOC_stock_0_30cm_less45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_less45yr_Q0.5_0-30cm.tif")/10
+
+map11 <- tm_shape(SOC_stock_dyn_ssp1 [[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "SOC stock dynamic fraction (SSP1)"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+  tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+
+#--------------------------------------
+SOC_stock_dyn_ssp5 <- rast("E:/SERENA/WP5_bundles/France/ISRIC_threats_France/Output_SOC_France/SOC_stock_less45yrssp5/maps/SOC_stock_0_30cm_less45yr/rangerquantreg_0-30_notransform_dorfe_notune/SOC_stock_0_30cm_less45yr_Q0.5_0-30cm.tif")/10
+
+map12 <- tm_shape(SOC_stock_dyn_ssp5[[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "SOC stock dinamic fraction (SSP5)"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+   tm_layout(legend.outside = T,
+             inner.margins=c(.08,.06, .05, .04))
+
+tmap_arrange(map10, map11, map12, nrow = 1)
+
+```
+
+#### IV) Future SOC stock under land use and climate change scenarios SSP1 and SSP5
+
+This maps are the result of adding the stable and the dynamic fraction predicted under land use and climate change SSP1 and SSP5 scenarios
+
+```{r}
+#SOC stock future SSP1
+SOC_stock_ssp1= SOC_stock_stable+SOC_stock_dyn_ssp1
+
+map13 <- tm_shape(SOC_stock_ssp1 [[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "SOC stock future SSP1"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+  tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+#---------------------------------------------------------------------------
+#SOC stock future SSP5
+SOC_stock_ssp5= SOC_stock_stable+SOC_stock_dyn_ssp5
+
+map14<- tm_shape(SOC_stock_ssp5 [[1]]) + 
+  tm_raster(style="quantile",
+            n=12,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "SOC stock future SSP5"
+            ) +tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.5,position=c("left", "bottom"))+
+  tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+tmap_arrange(map13, map14, nrow = 1)
+```
+
+#### V) SOC stock loss
+
+SOC stock loss is the result of the difference between present SOC stock and the future SOC stock
+
+```{r}
+#SOC stock loss 1= diference between future SOC stock ssp1 and present sock 
+
+SOC_stock_loss_1= SOC_stock_ssp1 - SOC_stock_present 
+
+map15 <- tm_shape(SOC_stock_loss_1 [[1]]) + 
+  tm_raster(style="quantile",
+            n=15,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "SOC stock loss 1") +
+  tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.7,position=c("left", "bottom"))+
+  tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+#------------------------------------
+
+#SOC stock loss 2= diference between future SOC stock ssp5 and present sock stock 
+
+SOC_stock_loss_2= SOC_stock_ssp5 - SOC_stock_present 
+
+map16 <- tm_shape(SOC_stock_loss_2[[1]]) + 
+  tm_raster(style="quantile",
+            n=15,
+            palette = "magma",
+            midpoint = NA, #  median(r[[1]],na.rm=T)
+            title= "SOC stock loss 2") +
+  tm_scalebar(breaks=c(0, 100,200, 300,500),text.size = 0.7,position=c("left", "bottom"))+
+  tm_layout(legend.outside = T,
+            inner.margins=c(.08,.06, .05, .04))
+
+tmap_arrange(map15, map16,nrow = 1)
+```
+
+### 2.4. Soil sealing
+
+### 2.5. Soil erosion
+
+### Conclusion
+
+### 
