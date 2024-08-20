@@ -599,11 +599,13 @@ plot(SOC_stock_actual/10)
 # Sealing ---------------
 library(terra)
 
+FodlerAllCovariates = "~/covariates/"
 ##1 Land use LUISA present and future 2050-----------
-LU_present<-  rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFranceActual.tiff")
-LU_2050 <- rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/LUISA_2012_2050_france/luisaFrance2050.tiff")
+LU_present<-  rast("~/covariates/luisaFranceActual.tiff")
+LU_2050 <- rast("~/covariates/luisaFrance2050.tiff")
 
-NUTS3_France <- vect("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/SHP/NUTS3_France.shp")
+NUTS3_France <- vect("~/covariates/socloss/shp/DEPARTEMENT.SHP")
+NUTS3_France <- project(NUTS3_France,"epsg:3035")  
 
 ##2 reclassify LU maps actual and future --------
 
@@ -698,7 +700,7 @@ classified_LU_Present <- terra::classify(LU_present, reclassifi_LU_present)
 
 ##3 convert NUTS3 vector to raster------------
 
-NUTS3_France$myid <- as.numeric(as.factor(NUTS3_France$NUTS_ID))
+NUTS3_France$myid <- as.numeric(as.factor(NUTS3_France$CODE_DEPT))
 
 
 NUTS_RAS <- rasterize(NUTS3_France,
@@ -707,40 +709,60 @@ NUTS_RAS <- rasterize(NUTS3_France,
 
 ##4 Combine NUTS3 and land use ----------
 
+# it cannot work before because 100 is too small. /!\
 
-classified_LU_Present_NUTS3 <- (100 * NUTS_RAS) + classified_LU_Present 
+classified_LU_Present_NUTS3 <- (1000 * NUTS_RAS) + classified_LU_Present 
 
-classified_LU2050_NUTS3 <- (100* NUTS_RAS) + classified_LU2050
+classified_LU2050_NUTS3 <- (1000 * NUTS_RAS) + classified_LU2050
 
 
-##Question-------------- 
+##Question
 
 #Here I am not sure because SEALING was calculated using the "impreviousness raster for statististics" so is not clear for me
 #witch raster is that one and if we really need it here. I downdloaded the impreviousness raster  file from https://land.copernicus.eu/en/products/high-resolution-layer-imperviousness/imperviousness-density-2012#download
 
-##5 imperviusness raster----------------
-Imperv_2012_France <- rast("E:/SERENA/WP5_bundles/France/France_harmonized_covariates/Imperviousness/Imperviousness_France.tif")
+##5 imperiousness raster----------------
 
-Imperv_Fr_2 <- terra::ifel(Imperv_2012_France == 254, 0 , Imperv_2012_France)
+Imperv_2012_Europe <- rast("~/covariates/IMD_2018_010m_03035_V2_0.tif")
+Imperv_2012_France <- crop(Imperv_2012_Europe, classified_LU2050_NUTS3, mask=TRUE)
 
-#  taking into account NUTS 
+# "254 non classifiable (no satellite image available, or clouds, shadows, or snow "
+hist(Imperv_2012_France)
+# not needed for France? not sure
+Imperv_Fr_2 <- terra::ifel(Imperv_2012_France == 254, 
+                           0 ,
+                           Imperv_2012_France)
+
+# align the raster to the imperviousness one
+classified_LU_Present_NUTS3_1 <- terra::resample(classified_LU_Present_NUTS3, 
+                               Imperv_Fr_2,
+                           method= "near" )
+
+
+
+#  compute the average value of imperviousness per canton 
 resNuts3 <- terra::zonal(Imperv_Fr_2,
-                         classified_LU_Present_NUTS3, 
+                         classified_LU_Present_NUTS3_1, 
                          na.rm=TRUE   )
 
 
-#mask <- 1000 * ( (resNuts3$myid / 1000) - (resNuts3$myid %/% 1000) )
-#resNuts3$Classnames[ mask> 990] = 0
+# Extract the code of the canton from the myid column
+mask <- 1000 * ( (resNuts3$myid / 1000) - (resNuts3$myid %/% 1000) )
+# Correct the imperviousness by 0 for the code 999 which means non sealed area
+resNuts3$IMD_2018_010m_03035_V2_0 [ mask> 990] = 0
   
 
 impev_present_France <- terra::classify(classified_LU_Present_NUTS3,
-                                resNuts3)
-  
-  
+                                 resNuts3[])
+
 impev_2050_France <- terra::classify(classified_LU2050_NUTS3,
-                                resNuts3) 
+                                as.matrix(resNuts3)
+                                )
   
-plot(impev_2050_France )
+plot(impev_present_France )
+
+
+
 # soil threat ---------
 
 SoilSealing <- impev_2050_France - impev_present_France
@@ -748,12 +770,25 @@ SoilSealing <- impev_2050_France - impev_present_France
 plot(SoilSealing)
 
 
+writeRaster(SoilSealing,file="Output_SOC_France/SoilSealing.tiff")
 
 
 
+# Plan B: I would do it like that by keeping the raw data for present and not 
+# approximating the sealing by using the class... but this need to be discussed??
 
+classified_LU_2050_NUTS3_1 <- terra::resample(classified_LU2050_NUTS3, 
+                                                 Imperv_Fr_2,
+                                                 method= "near" )
+impev_2050_France_1 <- terra::classify(classified_LU_2050_NUTS3_1,
+                                     as.matrix(resNuts3)
+)
 
+SoilSealing_2 <- impev_2050_France_1 - Imperv_Fr_2
 
+plot(SoilSealing_2 )
+
+writeRaster(SoilSealing_2,file="Output_SOC_France/SoilSealing_2.tiff")
 
 
 
